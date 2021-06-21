@@ -1,9 +1,10 @@
 package microServiceBye.controller;
 
-import microServiceBye.consumer.Consumer;
+import microServiceBye.consumer.ConsumerForKafka;
+import microServiceBye.model.ByeEntity;
+import microServiceBye.service.ByeEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.EnableKafka;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,19 +13,22 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/bye")
 @EnableKafka
 public class ByeController {
-    private KafkaTemplate<String, String> kafkaTemplate;
-    private Consumer consumer;
+    private ByeEntityService byeEntityService;
+    private ConsumerForKafka consumerForKafka;
 
     @Autowired
-    public void set(KafkaTemplate<String, String> kafkaTemplate, Consumer consumer){
-        this.consumer = consumer;
-        this.kafkaTemplate = kafkaTemplate;
+    public void set(ByeEntityService byeEntityService,
+                    ConsumerForKafka consumerForKafka){
+        this.byeEntityService = byeEntityService;
+        this.consumerForKafka = consumerForKafka;
     }
     
     @GetMapping
     public String sayBye(){
-        String msg = "Всего доброго!Вы здоровались " + consumer.getCountMessage() + " раз";
-        kafkaTemplate.send("bye", msg);
-        return msg;
+        String message = "Всего доброго!Вы здоровались "  + consumerForKafka.getCountMessage() + " раз";
+        ByeEntity bye = byeEntityService.getByIdName("bye");
+        bye.setCount(bye.getCount() + 1L);
+        byeEntityService.saveBye(bye);
+        return message;
     }
 }
